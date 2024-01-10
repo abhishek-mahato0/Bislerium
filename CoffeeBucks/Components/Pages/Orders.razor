@@ -1,0 +1,426 @@
+﻿@page "/orders"
+@using CoffeeBucks.models
+@using CoffeeBucks.Controllers
+@using CoffeeBucks.Utils
+
+<h1>View Orders</h1>
+@if (totalOrders != null)
+{
+	<div class="w-full flex flexbetween">
+		<button type="button" class="btn btn-primary">
+			Selected Filter <span class="badge bg-secondary">@totalOrders.selectedDate</span>
+		</button>
+		<button type="button" class="btn btn-primary">
+			Total Orders <span class="badge bg-secondary">@totalOrders.totalorders</span>
+		</button>
+		<button type="button" class="btn btn-primary">
+			Total Revenue <span class="badge bg-secondary">@totalOrders.revenue</span>
+		</button>
+		<button class=" btn btn-primary" @onclick="exportPdf">
+			@if (isLoading)
+			{
+				< CoffeeBucks.Components.Layout.Components.Loading />
+			}
+			Export as PDF
+		</button>
+	</div>
+}
+<nav class="navbar navbar-expand-lg navbar-light bg-light mt-3">
+	<div class="container-fluid">
+		 <ul class="navbar-nav">
+			<li class="nav-item" @onclick='()=> changeFilterby("all")'>
+				<p class="nav-link cursor-pointer @(filterBy=="all"? "active text-primary" :"")">All</p>
+			</li>
+		<li class="nav-item"  @onclick='()=> changeFilterby("today") '>
+			<p class="nav-link cursor-pointer @(filterBy=="today"? "active text-primary" :"")" >Today</p>
+		</li>
+		<li class="nav-item"  @onclick='()=> changeFilterby("week")'>
+				<p class="nav-link cursor-pointer @(filterBy=="week"? "active text-primary" :"")">This Week</p>
+		</li>
+		<li class="nav-item"  @onclick='()=> changeFilterby("month")'>
+				<p class="nav-link cursor-pointer @(filterBy=="month"? "active text-primary" :"")">This Month</p>
+		</li>
+		 </ul>
+		<form class="d-flex gap-2" @onsubmit="filterbyCustomDate">
+				<input class="form-control me-2" type="date" placeholder="sales of particular month" aria-label="Search" @bind="from"/>
+				<p>to</p>
+				<input class="form-control me-2" type="date" placeholder="sales of particular month" aria-label="Search" @bind="to"/>
+				<button class="btn btn-outline-success" type="submit">Filter</button>
+				<buttion class=" btn bg-custom-light p-2" @onclick="clearDate">
+				Clear
+				</buttion>
+			</form>
+		</div>
+</nav>
+
+<div class="flexBetween w-full flex gap-5 mb-3 mt-3">
+	<div class="w-full bg-light rounded-1">
+		<div class="modal-header w-full">
+			<p>Top 5 most purchased coffee.</p>
+		</div>
+		<table class="table border-1 w-full">
+			<thead class=" bg-custom text-white">
+				<tr>
+					<th>S.N.</th>
+					<th>Name</th>
+					<th>Qty</th>
+					<th>Revenue</th>
+				</tr>
+			</thead>
+			<tbody>
+				@if (totalOrders.mostOrderedCoffee != null)
+				{
+					@foreach (var item in totalOrders.mostOrderedCoffee)
+					{
+						<tr>
+							<td>@(totalOrders.mostOrderedCoffee.IndexOf(item) + 1)</td>
+							<td>@item.Name</td>
+							<td>@item.Quantity</td>
+							<td>@item.TotalRevenue</td>
+						</tr>
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+	<div class="w-full bg-light rounded-1">
+		<div class="modal-header w-full">
+			<p>Top 5 most purchased Addins</p>
+			
+		</div>
+		<table class=" table border-1 w-full">
+			<thead class=" bg-custom text-white">
+				<tr>
+					<th>S.N.</th>
+					<th>Name</th>
+					<th>Qty</th>
+					<th>Revenue</th>
+				</tr>
+			</thead>
+			<tbody>
+				@if (totalOrders.mostOrderdAddins != null)
+				{
+					@foreach (var item in totalOrders.mostOrderdAddins)
+					{
+						<tr>
+							<td>@(totalOrders.mostOrderdAddins.IndexOf(item) + 1)</td>
+							<td>@item.Name</td>
+							<td>@item.Quantity</td>
+							<td>@item.TotalRevenue</td>
+						</tr>
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+	
+</div>
+
+<h3 class=" mt-3">Total Orders</h3>
+<table class="table border-1 bg-light">
+	<thead class=" bg-dark text-white">
+		<tr>
+			<th>S.N</th>
+			<th>Customer Name</th>
+			<th>Products And AddIns</th>
+			<th>Type</th>
+			<th>Discount</th>
+			<th>Net Total</th>
+			<th>Date</th>
+			<th>CreatedBy</th>
+			<th>Action</th>
+
+
+		</tr>
+	</thead>
+	<tbody>
+		@if (totalOrders != null)
+		{
+			@if (totalOrders.filtorders != null)
+			{
+				@foreach (var item in totalOrders.filtorders)
+				{
+					<tr>
+						<td>@(totalOrders.filtorders.IndexOf(item) + 1)</td>
+						<td>@(cusController.getCustomerById(item.customerId))</td>
+						<td class=" flex flex-column gap-3">
+							@if (item.product.prod != null)
+							{
+								@foreach (var prod in item.product.prod)
+								{
+									<div class=" flex flex-column gap-0">
+										<p class="">
+											@prod.Name
+										</p>
+										<p>Qty: @prod.qty</p>
+										@if (prod.topings.Any())
+										{
+											@string.Join(", ", prod.topings.Select(p => p.Name))
+										}
+										else
+										{
+											<p>no topings</p>
+										}
+										<span class="badge bg-primary">Total: 
+											@((prod.qty * prod.price) + prod.topings.Sum(item => item.price * item.qty))
+										</span>
+									</div> 
+									<div class=" w-full border-2"/>
+
+								}
+
+							}
+							else
+							{
+								<p>No orders yet.</p>
+							}
+						</td>
+						<td>@item.type</td>
+						<td>@item.discount</td>
+
+						<td>@item.net_total</td>
+						<td>@item.DateCreated</td>
+						<td><span class="badge bg-primary">@( userController.getUserById(item.orderBy))</span></td>
+						@if (_globalState.CurrentUser!.role == "admin")
+						{
+							<td>
+								<div class=" cursor-pointer hover-effect" @onclick="()=>ShowDeleteModal(item.Id)">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="red" class="bi bi-trash3" viewBox="0 0 16 16">
+									<path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
+								</svg>
+							</div>
+						</td>
+						}
+					</tr>
+				}
+			}
+			else
+			{
+				<tr>No Orders to show</tr>
+			}
+		}
+	</tbody>
+</table>
+
+@if (showDeleteModal)
+{
+	<div class="modal">
+		<div class=" modal-container">
+			<div class="modal-header w-full">
+				<h2>Delete Coffee</h2>
+				<div @onclick="hideDeleteModal" class=" cursor-pointer hover-effect">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+						<path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+					</svg>
+				</div>
+			</div>
+			<div class="modal-body w-full">
+				<p class=" text-black-50"> Are you sure you want to delete ?</p>
+			</div>
+
+			<div class="modal-footer w-full">
+				<p class="text-black text-xl-center cursor-pointer hover-effect" @onclick="hideDeleteModal">Cancel</p>
+				<button type="button" class="btn btn-danger hover-effect" @onclick="DeleteOrder">Delete</button>
+			</div>
+		</div>
+	</div>
+}
+
+@if (showVerifyPassword)
+{
+	<div class="modal">
+		<div class=" modal-container">
+			<div class="modal-header w-full">
+				<h2>Verify your password</h2>
+				<div @onclick="hideverifyModal" class=" cursor-pointer hover-effect">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+						<path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+					</svg>
+				</div>
+			</div>
+			<div class="modal-body w-full">
+				<input type="password" placeholder="password" @bind="password" class=" form-control w-full p-2" />
+			</div>
+			<div class="modal-footer w-full">
+				<p class="text-black text-xl-center cursor-pointer hover-effect" @onclick="hideverifyModal">Cancel</p>
+				<button type="button" class="btn btn-danger hover-effect" @onclick="verifyPassword">Verify</button>
+			</div>
+		</div>
+	</div>
+}
+
+
+@if (!string.IsNullOrEmpty(error))
+{
+	<CoffeeBucks.Components.Layout.Components.Message CustomMessage="@error" OnClose="OnMessageClose" type="error" />
+}
+
+@if (!string.IsNullOrEmpty(success))
+{
+	<CoffeeBucks.Components.Layout.Components.Message CustomMessage="@success" OnClose="OnMessageClose" type="success" />
+}
+
+
+@code {
+	[CascadingParameter]
+	private GlobalState _globalState { get; set; }
+
+	private string filterBy { get; set; } = "all";
+
+	List<OrderModel> orderList = new List<OrderModel>();
+	OrderRevenueModel totalOrders = new OrderRevenueModel();
+	List<OrderModel> neworderList = new List<OrderModel>();
+
+	private bool isLoading { get; set; } = false;
+	private bool showDeleteModal { get; set; } = false;
+
+	OrderController ordercontroller = new OrderController();
+
+	CustomerControllers cusController = new CustomerControllers();
+	CoffeeController coffeeController = new CoffeeController();
+	UserController userController = new UserController();
+
+	private string success { get; set; } = "";
+	private string error { get; set; } = "";
+
+	private DateTime from { get; set; } = DateTime.Today;
+	private DateTime to { get; set; } = DateTime.Today.AddDays(1);
+	private int page { get; set; } = 1;
+	private Guid deleteId { get; set; }
+
+	private bool showVerifyPassword { get; set; } = false;
+	private string password { get; set; }
+	private string action { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			totalOrders = await ordercontroller.getOrderByTimePeriod(filterBy);
+		}
+		catch (Exception e)
+		{
+			error = e.Message;
+		}
+
+	}
+
+
+
+	private void OnMessageClose()
+	{
+		success = string.Empty;
+		error = string.Empty;
+	}
+	//filtering order according to the "all", "week", etc.
+	private async Task changeFilterby(string parameter)
+	{
+		filterBy = parameter;
+		totalOrders = await ordercontroller.getOrderByTimePeriod(parameter);
+	}
+	private async Task clearDate()
+	{
+		from = DateTime.Today;
+		to = DateTime.Today.AddDays(1);
+		totalOrders = await ordercontroller.getOrderByTimePeriod("all");
+
+	}
+	//get total order by custom date
+	private async Task filterbyCustomDate()
+	{
+		totalOrders = await ordercontroller.getOrdersByMonth(from,to);
+
+
+	}
+	//function for generating pdf
+	private void exportPdf()
+	{
+		isLoading = true;
+		try
+		{
+
+			QuestPdfGenerator.GenerateSalesPdf(totalOrders);
+			isLoading = false;
+			success = "Pdf generated successfully in desktop";
+		}catch(Exception ex)
+		{
+			error = ex.Message;
+			isLoading = false;
+		}
+
+
+	}
+	private void ShowDeleteModal(Guid Id)
+	{
+		showVerifyPassword = true;
+		deleteId = Id;
+
+	}
+	private void hideDeleteModal()
+	{
+		showDeleteModal = false;
+	}
+	private void hideverifyModal()
+	{
+		showVerifyPassword = false;
+	}
+
+	//deleting orders only for admin
+	private async Task DeleteOrder()
+	{
+		try
+		{
+			if (deleteId != null)
+			{
+				CustomMessage message = await ordercontroller.deleteOrder(deleteId);
+				@if (message.success)
+				{
+					totalOrders = await ordercontroller.getOrderByTimePeriod(filterBy);
+					success = message.message;
+					error = string.Empty;
+					showDeleteModal = false;
+				}
+				else
+				{
+					showDeleteModal = false;
+					error = "Some error occured. Please try again.";
+					success = string.Empty;
+
+
+				}
+
+			}
+			else
+			{
+				showDeleteModal = false;
+				error = "Some error occured. Please try again.";
+			}
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+	}
+	private async Task verifyPassword()
+	{
+		try{
+		if (await new UserController().verifyPassword(_globalState.CurrentUser.Id, password))
+		{
+			showVerifyPassword = false;
+			password = "";
+			showDeleteModal = true;
+		}
+		else
+		{
+			error = "Password does not match";
+		}
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+
+	}
+
+}
+

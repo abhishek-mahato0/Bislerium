@@ -1,0 +1,109 @@
+﻿@page "/login"
+@using CoffeeBucks.Utils
+@using CoffeeBucks.models
+@using CoffeeBucks.Controllers
+@inject NavigationManager NavManager
+
+<div class="flexCenter h-full align-items-center justify-content-center align-content-center gap-2">
+	<div class=" w-50 flex flex-column gap-2 bg-custom-p p-4 text-white">
+		<p class=" text-danger">@(errorMessage )</p>
+		<h3>Login</h3>
+		<div class="mb-3">
+			<label for="email" class="form-label">Username</label>
+			<input type="text" class="form-control" id="email" @bind="username" placeholder="username...">
+		</div>
+		<div class="mb-3">
+			<label for="password" class="form-label">Password</label>
+			<input type="password" class="form-control" id="password" @bind="password" placeholder="password" />
+		</div>
+		<button type="button" class=" btn btn-primary" @onclick="LoginHandler">@(loading ? "Loading..":"Login")</button>
+		@if (isfistLogin)
+		{
+			<div class=" modal-footer w-full">
+				<span class=" text-white">Username: admin</span>
+				<span class=" text-white">Password: admin</span>
+			</div>
+		}
+		</div>
+	
+</div>
+@if (!string.IsNullOrEmpty(success))
+{
+	<CoffeeBucks.Components.Layout.Components.Message CustomMessage="@success" OnClose="OnMessageClose" type="success" />
+}
+
+
+@code {
+	[CascadingParameter]
+	private GlobalState _globalState { get; set; }
+	UserController usercontroller = new UserController();
+	UserModel userList = new UserModel();
+	private string username { get; set; }
+	private string password { get; set; }
+	private string errorMessage { get; set; } 
+	private string success { get; set; }
+	private bool loading = false;
+	private bool isfistLogin { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		errorMessage = "";
+		string appDataDirectoryPath = FilePaths.GetAppDirectoryPath();
+		string appUsersFilePath = FilePaths.GetJSONFilePath("users.json");
+
+		List<UserModel> userList = await usercontroller.readUserList();
+		if (userList.Count <= 0)
+		{
+			isfistLogin = true;
+		}
+		else
+		{
+			isfistLogin = false;
+		}
+	}
+	//login of the user
+	private async Task LoginHandler()
+	{
+		try
+		{
+			if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+			{
+				errorMessage = "Email and password are required fields.";
+			}
+			else
+			{
+				errorMessage = "";
+				loading = true;
+				CustomUserMessage message = await usercontroller.login(username, password);
+				loading = false;
+				if (message.success)
+				{
+					_globalState.CurrentUser = message.user;
+					success = message.message;
+					if (message.isFirstUser)
+					{
+						NavManager.NavigateTo("/changepassword");
+					} else if( _globalState.CurrentUser.role =="admin") {
+						NavManager.NavigateTo("/dashboard");
+					}else{
+						NavManager.NavigateTo("/createorder");
+					}
+				}
+				else{
+					errorMessage = message.message;
+				}
+			}
+
+		}
+		catch (Exception e)
+		{
+			errorMessage = e.Message;
+		}
+	}
+
+	private void OnMessageClose()
+	{
+		success = string.Empty;
+	}
+
+}

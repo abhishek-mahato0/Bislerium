@@ -1,0 +1,586 @@
+﻿@page "/createorder"
+@using CoffeeBucks.models
+@using CoffeeBucks.Controllers
+@using CoffeeBucks.Utils
+
+<h1>Place Orders</h1>
+<div class="order-container">
+	@if (isEligibleDisc)
+	{
+		<p class="text-success"> Note: The customer has purchased for whole month and is eligible for discount.</p>
+	}
+	@if (isCoffeeFree)
+	{
+		<p class="text-success"> Note: The customer has unlocked a free complimentary coffee of any type.</p>
+	}
+	<div class=" flex w-95 gap-3 h-50">
+		<div class="customer-search h-75">
+			<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="Search customer" @oninput="OnInputChange"/>
+			<div class=" flex flex-column shadow-box w-100 p-1 h-50 overflow-scroll">
+				<ul class="list-group w-100">
+					@if (customerList != null)
+					{
+						@foreach (var item in customerList)
+						{
+							<li class="list-group-item cursor-pointer list-group-item-action @(item.Id == @customer.Id ? "active":"" ) " @onclick="()=> selectedCustomer(item)">@item.Name</li>
+						}
+					}
+					else
+					{
+						<li class="list-group-item cursor-pointer">No customer found.</li>
+
+					}
+				</ul>
+			</div>
+		</div>
+
+		<div class="main-container bg-custom-light h-100">
+			<div class="flex flex-column w-100 border px-3">
+				<h4 class=" minus-container">Customer Details</h4>
+				<div class=" flex flex-column align-items-start justify-content-start gap-0">
+					<p><span class=" fw-bold">Name:</span> @customer.Name</p>
+					<p><span class=" fw-bold">Phone:</span> @customer.PhoneNumber</p>
+				</div>
+
+			</div>
+			<div class="product w-100 border px-3">
+				<h4 class=" minus-container">Product </h4>
+				<div class="flex justify-content-between align-items-center w-100">
+					<p><span class=" fw-bold">Product: </span>@selProd.Name</p>
+					<input type="number" class="qty-input" min="1" placeholder=" quantity" @bind="selProd.qty" />
+					<p><span class=" fw-bold">Price:</span>@selProd.price</p>
+				</div>
+				<div class=" flex flex-column border w-98 px-2">
+					<p>Add-Ins</p>
+					@if (selProd.topings != null)
+					{
+
+						@foreach (var item in selProd.topings)
+						{
+							<div class="flex justify-content-between align-items-center align-content-center w-100">
+								<div class=" cursor-pointer hover-effect" @onclick="()=>removeAddins(item.Id)">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
+										<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+										<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
+									</svg>
+								</div>
+								<p class="fw-bold">@item.Name</p>
+								<input type="number" min="1" class="qty-input" placeholder="qty" @bind="item.qty" />
+								<p><span class=" fw-bold">Price: @item.price</span></p>
+							</div>
+						}
+					}
+					else
+					{
+						<p>No addins selected yet.</p>
+					}
+
+				</div>
+				<div class=" flex w-100 py-4 align-items-center justify-content-end align-content-center gap-3">
+					<p>Total: @total</p>
+					<button class=" btn btn-primary" @onclick="AddOrder">Add</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="product-search gap-3">
+			<div class="flex flex-column align-items-start justify-content-start w-100 h-50">
+				<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="Search coffee" @oninput="searchCoffee" @bind="coffeeSearch" />
+				<div class=" flex flex-column shadow-box w-100 p-1 h-90 overflow-scroll">
+					<ul class="list-group w-100">
+						@if (coffeelist != null)
+						{
+							@foreach (var item in coffeelist)
+							{
+								<li class="list-group-item cursor-pointer" @onclick="()=> selectedCoffee(item)">@item.Name</li>
+							}
+						}
+						else
+						{
+							<li class="list-group-item cursor-pointer">No coffee found.</li>
+
+						}
+
+
+					</ul>
+				</div>
+			</div>
+			<div class="flex flex-column align-items-start justify-content-start w-100 h-50">
+				<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="Search Addins" @oninput="searchAddins">
+				<div class=" flex flex-column shadow-box w-100 p-1 h-90 overflow-scroll">
+					<ul class="list-group w-100">
+						@if (addinsList != null)
+						{
+							@foreach (var item in addinsList)
+							{
+								<li class="list-group-item cursor-pointer" @onclick="()=> selectedAddin(item)">@item.Name</li>
+							}
+						}
+						else
+						{
+							<li class="list-group-item cursor-pointer">No addin found.</li>
+
+						}
+
+
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class=" flex w-90 align-items-center justify-content-center gap-4 h-60">
+		<div class="w-100">
+			<table class="table table-hover">
+				<thead class="bg-custom text-white">
+					<tr>
+						<th>S.N</th>
+						<th>Coffee</th>
+						<th>Addins</th>
+						<th>Total</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					@if (totalProd.prod != null)
+					{
+						@foreach (var item in totalProd.prod)
+						{
+							<tr>
+								<td>@(totalProd.prod.IndexOf(item) + 1)</td>
+								<td>@item.Name</td>
+								<td>
+									@if (item.topings.Any())
+									{
+										@string.Join(", ", item.topings.Select(p => p.Name))
+									}
+									else
+									{
+										<p>No topings</p>
+									}
+								</td>
+								<td>
+
+									@((item.qty * item.price) + item.topings.Sum(item => item.price * item.qty))
+								</td>
+								<td class=" flex gap-4">
+									<div class="cursor-pointer hover-effect" @onclick="()=>deleteAnOrder(item.Id)">
+										<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="red" class="bi bi-trash3" viewBox="0 0 20 20">
+											<path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
+										</svg>
+									</div>
+								</td>
+							</tr>
+						}
+					}
+					else
+					{
+					<td>No Order product display.</td>
+					}
+				</tbody>
+			</table>
+			<div class=" flex justify-content-end align-items-center h-auto w-100 gap-5 px-5 mt-5">
+				<p><span class=" fw-bold">Discount:@( isEligibleDisc ? "10%": "0" ) </span></p>
+				<p><span class=" fw-bold">Total: @generateTotalBill()</span></p>
+				<button class=" btn btn-primary" disabled="@(totalProd == null)" @onclick="generateBill">
+					@if (isLoading)
+					{
+						<CoffeeBucks.Components.Layout.Components.Loading/>
+					}
+					Export as PDF.
+					</button>
+				<button class=" btn btn-primary" disabled="@(totalProd == null)" @onclick="placeOrder">Place order</button>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+
+@if (!string.IsNullOrEmpty(error))
+{
+	<CoffeeBucks.Components.Layout.Components.Message CustomMessage="@error" OnClose="OnMessageClose" type="error" />
+}
+
+@if (!string.IsNullOrEmpty(success))
+{
+	<CoffeeBucks.Components.Layout.Components.Message CustomMessage="@success" OnClose="OnMessageClose" type="success" />
+}
+
+
+@code {
+	[CascadingParameter]
+	private GlobalState _globalState { get; set; }
+
+	CustomerModel customer = new CustomerModel();
+	CoffeeModel prod = new();
+	AddInsModel addins = new();
+
+
+	OrderedProducts selProd = new OrderedProducts();
+	OrderedAddins seladdin = new OrderedAddins();
+	TotalProd totalProd = new TotalProd();
+
+	// OrderModel createdorder = new OrderModel();
+
+	List<CustomerModel> customerList = new List<CustomerModel>();
+	List<CoffeeModel> coffeelist = new List<CoffeeModel>();
+	List<AddInsModel> addinsList = new List<AddInsModel>();
+
+
+	CoffeeController coffeeController = new CoffeeController();
+	CustomerControllers cusController = new CustomerControllers();
+	AddInsController addInsController = new AddInsController();
+	OrderController orderController = new OrderController();
+
+	private int coffeeQty { get; set; } = 1;
+	private int addinQty { get; set; } = 1;
+	private decimal total { get; set; }
+
+	private string customerSearch { get; set; }
+	private string coffeeSearch { get; set; }
+	private string addInsSearch { get; set; }
+
+	private string success { get; set; } = "";
+	private string error { get; set; } = "";
+	private bool isEligibleDisc { get; set; }
+	private bool isCoffeeFree { get; set; }
+
+	private bool isLoading { get; set; } = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			coffeelist = await coffeeController.readCoffeeList();
+			addinsList = await addInsController.readAddinsList();
+			customerList = await cusController.readCustomersList();
+
+		}
+		catch (Exception e)
+		{
+			error = e.Message;
+		}
+	}
+	//select coffee
+
+	private void selectedCoffee(CoffeeModel selectedcoffee)
+	{
+		try
+		{
+			if (customer.Id != null)
+			{
+				selProd = new OrderedProducts { Id = selectedcoffee.Id, Name = selectedcoffee.Name, qty = 1, topings = [], price = selectedcoffee.Price };
+				makeTotal();
+			}
+			else
+			{
+				error = "Select a customer first";
+			}
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+	}
+
+	//select customer for biling
+	private async Task selectedCustomer(CustomerModel cus)
+	{
+		try
+		{
+			customer = new CustomerModel { Id = cus.Id, Name = cus.Name, PhoneNumber = cus.PhoneNumber };
+			if (customer != null)
+			{
+				isEligibleDisc = await orderController.isEligibleForDiscount(customer.Id);
+				isCoffeeFree = await cusController.isEligibleForComplimentary(customer.Id);
+			}
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+	}
+	private void selectedAddin(AddInsModel addin)
+	{
+		try
+		{
+			if (selProd.Name == null)
+			{
+				error = "Please select a coffee first";
+			}
+			else
+			{
+				seladdin = new OrderedAddins
+					{
+						Id = addin.Id,
+						Name = addin.Name,
+						qty = 1,
+						price = addin.Price
+					};
+				selProd.topings.Add(seladdin);
+				makeTotal();
+			}
+		}
+		catch (Exception e)
+		{
+			error = e.Message;
+		}
+	}
+
+	//remove addin
+	private void removeAddins(Guid Id)
+	{
+		try{
+			OrderedAddins existedAddin = selProd.topings.Find(c => c.Id == Id);
+			if (existedAddin != null)
+			{
+				selProd.topings.Remove(existedAddin);
+				success = "Addins removed";
+
+			}
+			else
+			{
+				error = "No adins found";
+
+			}
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+	}
+
+	private void makeTotal()
+	{
+		if (selProd.topings != null)
+		{
+			total = (selProd.qty * selProd.price) + selProd.topings.Sum(item => item.price * item.qty);
+		}
+		else
+		{
+			total = (selProd.qty * selProd.price);
+		}
+	}
+
+	private void OnMessageClose()
+	{
+		success = string.Empty;
+		error = string.Empty;
+	}
+
+	//delete order only for admin
+	private void deleteAnOrder(Guid id)
+	{
+		try
+		{
+			OrderedProducts existedOrder = totalProd.prod.Find(c => c.Id == id);
+			if (existedOrder != null)
+			{
+				totalProd.prod.Remove(existedOrder);
+				success = "Order removed";
+			}
+			else
+			{
+				error = "No order found";
+			}
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+
+	}
+
+	//function for calculating total bill
+	private decimal generateTotalBill()
+	{
+		List<decimal> newtotal = new List<decimal>();
+		foreach (var item in totalProd.prod)
+		{
+			newtotal.Add((item.qty * item.price) + item.topings.Sum(item => item.price * item.qty));
+		}
+		return newtotal.Sum();
+	}
+
+	//add new order
+	private void AddOrder()
+	{
+		try
+		{
+			if (customer == null)
+			{
+				error = "Please select a customer";
+			}
+			else
+			{
+				if (selProd.Name != null)
+				{
+
+					totalProd.prod.Add(selProd);
+					totalProd.total = generateTotalBill();
+					selProd = new OrderedProducts();
+					total = 0;
+				}
+				else
+				{
+					error = "No selected product";
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			error = e.Message;
+		}
+
+
+	}
+
+	//place order of the customer
+	private async Task placeOrder()
+	{
+		try
+		{
+			if (customer.Id != Guid.Empty && totalProd !=null)
+			{
+				bool isEligibleForDiscount = await orderController.isEligibleForDiscount(customer.Id);
+				bool isComplementary = await cusController.isEligibleForComplimentary(customer.Id);
+
+				decimal total()
+				{
+
+					if (isEligibleForDiscount)
+					{
+						decimal discountPercentage = 10; // You can change this to the actual discount percentage
+						return totalProd.total - (discountPercentage / 100 * totalProd.total);
+					}
+					else
+					{
+						return totalProd.total;
+					}
+
+				}
+
+				if (totalProd.prod.Count > 0)
+				{
+					OrderModel createdorder = new OrderModel
+						{
+							customerId = customer.Id,
+							product = new TotalProd
+							{
+								prod = totalProd.prod,
+								total = totalProd.total
+							},
+							type = isEligibleForDiscount ? "discounted" : isComplementary ? "complement" : "normal",
+							discount = isEligibleForDiscount ? 10 : 0,
+							DateCreated = DateTime.Now,
+							orderBy = _globalState.CurrentUser.Id,
+							net_total = total()
+						};
+
+					OrderController orderController = new OrderController();
+					CustomMessage message = await orderController.addOrder(createdorder);
+					if (message.success)
+					{
+						CustomMessage message1 = await cusController.increaseCompOrders(customer.Id);
+						CustomMessage message2 = await new CustomerControllers().addOrders(createdorder.customerId, createdorder.Id);
+						success = message.message;
+						customer = new CustomerModel();
+						selProd = new OrderedProducts();
+						seladdin = new OrderedAddins();
+						totalProd = new TotalProd();
+						createdorder = new OrderModel();
+
+					}
+					else
+					{
+						error = message.message;
+
+					}
+				}
+				else
+				{
+					error = "Cannot place empty order.";
+				}
+			}
+			else
+			{
+				error = "Please select customer.";
+			}
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+	}
+
+	//generate pdf of the bill
+	private async Task generateBill()
+	{
+		try
+		{
+			isLoading = true;
+			bool isEligibleForDiscount = await orderController.isEligibleForDiscount(customer.Id);
+			bool isComplementary = await cusController.isEligibleForComplimentary(customer.Id);
+
+			if (totalProd.prod.Count > 0)
+			{
+				OrderModel createdorder = new OrderModel
+					{
+						customerId = customer.Id,
+						product = new TotalProd
+						{
+							prod = totalProd.prod,
+							total = totalProd.total
+						},
+						type = isEligibleForDiscount ? "discounted" : isComplementary ? "complementary" : "normal",
+						discount = isEligibleForDiscount ? 10 : 0,
+						DateCreated = DateTime.Now,
+						orderBy = _globalState.CurrentUser.Id,
+						net_total = isEligibleForDiscount ? (generateTotalBill() + ((10 / 100) * generateTotalBill())) : generateTotalBill()
+					};
+				if (createdorder != null)
+				{
+					QuestPdfGenerator.GenerateBillPdf(createdorder);
+				}
+			}
+			isLoading = false;
+			success = "Pdf generated in desktop.";
+		}
+		catch (Exception ex)
+		{
+			isLoading = false;
+			error = ex.Message;
+		}
+
+	}
+
+	//search customer by name or phone
+	private void OnInputChange(ChangeEventArgs eventArgs)
+	{
+		if (eventArgs.Value != null)
+		{
+			customerSearch = eventArgs.Value.ToString();
+			customerList = cusController.getCustomer(customerSearch);
+		}
+	}
+
+	//search coffee by  name
+	private async Task searchCoffee(ChangeEventArgs eventArgs)
+	{
+		if (eventArgs.Value != null)
+		{
+			coffeeSearch = eventArgs.Value.ToString();
+			coffeelist = await coffeeController.getCoffee(coffeeSearch);
+		}
+	}
+
+	//search addin by name
+	private async Task searchAddins(ChangeEventArgs eventArgs)
+	{
+		if (eventArgs.Value != null)
+		{
+			addinsList = await addInsController.getAddin(eventArgs.Value.ToString());
+		}
+	}
+}
+

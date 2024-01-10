@@ -1,0 +1,37 @@
+[
+    {
+        "Id": 1,
+        "Name": "Cinnamon",
+        "Price": 25.00
+    },
+    {
+        "Id": 2,
+        "Name": "Honey",
+        "Price": 30.00
+    },
+    {
+        "Id": 3,
+        "Name": "Ginger",
+        "Price": 40.00
+    },
+    {
+        "Id": 4,
+        "Name": "Chocolate",
+        "Price": 50.00
+    },
+    {
+        "Id": 5,
+        "Name": "Ice Cream",
+        "Price": 70.00
+    },
+    {
+        "Id": 6,
+        "Name": "Vanilla",
+        "Price": 60.00
+    },
+    {
+        "Id": 7,
+        "Name": "Caramel",
+        "Price": 45.00
+    }
+]

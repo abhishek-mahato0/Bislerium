@@ -1,0 +1,111 @@
+﻿@page "/dashboard"
+@using CoffeeBucks.Controllers
+@using CoffeeBucks.models
+@using CoffeeBucks.Utils
+<h5 class="text-custom">Admin Dashboard</h5>
+<div class="flex flex-column gap-4">
+	<div class=" flex flex-column bg-light p-2">
+		<h3 class=" text-black">Overall Insights</h3>
+		<div class="dash-container">
+			<div class="das-card">
+				<h5 class="textxl">Total Addins </h5>
+				<h1 class="textxxl fw-bolder">@totalAddins</h1>
+			</div>
+			<div class="das-card">
+				<h5 class="textxl">Total Coffees</h5>
+				<h1 class="textxxl fw-bolder">@totalCoffee</h1>
+			</div>
+			<div class="das-card">
+				<h5 class="textxl">Total Customers</h5>
+				<h1 class="textxxl fw-bolder">@totalcustomer</h1>
+			</div>
+			<div class="das-card">
+				<h5 class="textxl">Total Users </h5>
+				<h1 class="textxxl fw-bolder">@totalusers</h1>
+			</div>
+		</div>
+	</div>
+	<div class="flex flex-column gap-4 bg-light p-2">
+		<h3>Todays Insights</h3>
+		<div class="dash-container">
+			<div class="das-card">
+				
+					<h5 class="textxl">Total Orders Today: </h5>
+				@if (totalOrderstoday != null)
+				{
+					<h1 class="textxxl fw-bolder">@totalOrderstoday</h1>
+				}
+			</div>
+			<div class="das-card">
+				<h5 class="textxl">Total Revenue Today</h5>
+				@if (totalrevenue != null)
+				{
+					<h1 class="textxxl fw-bolder">@totalrevenue</h1>
+				}
+			</div>
+		</div>
+	</div>
+	<div class="flex flex-column gap-4 bg-light p-2">
+		<h3>Most Active Customer</h3>
+		<div class="dash-container">
+			@if (summary != null)
+			{
+				<div class="das-card">
+					<h5 class="textxl">Customer Name: </h5>
+					<h1 class="textxxl fw-bolder">@summary!.CustomerName</h1>
+				</div>
+				<div class="das-card">
+					<h5 class="textxl">Total Purchases: </h5>
+					<h1 class="textxxl fw-bolder">@summary!.TotalOrders</h1>
+				</div>
+				<div class="das-card">
+					<h5 class="textxl">Total CashPaid: </h5>
+				<h1 class="textxxl fw-bolder">Rs. @summary!.TotalCashPaid</h1>
+			</div>
+			}
+		</div>
+	</div>
+</div>
+
+@if (!string.IsNullOrEmpty(error))
+{
+	<CoffeeBucks.Components.Layout.Components.Message CustomMessage="@error" OnClose="OnMessageClose" type="error" />
+}
+
+@code {
+	private string error { get; set; }
+	private int totalusers { get; set; } = 0;
+	private int totalCoffee { get; set; } = 0;
+	private int totalAddins { get; set; } = 0;
+	private int totalcustomer { get; set; } = 0;
+	private int totalOrderstoday { get; set; } = 0;
+	private decimal totalrevenue { get; set; } = 0;
+	ReportController reports = new ReportController();
+	CustomerSummary summary = new CustomerSummary();
+	OrderController orderController = new OrderController();
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			totalusers = await reports.getTotalUsers();
+			totalCoffee = await reports.getTotalCoffee();
+			totalcustomer = await reports.getTotalCustomer();
+			totalAddins = await reports.getTotalAddins();
+			totalOrderstoday = await reports.getTodaysOrderCount();
+			totalrevenue = await reports.getTodaysSales();
+			summary = await orderController.findMostActiveCustomer();
+		}catch(Exception ex)
+		{
+			error = ex.Message;
+
+		}
+
+	}
+
+	private void OnMessageClose()
+	{
+
+		error = string.Empty;
+	}
+
+}

@@ -1,0 +1,47 @@
+﻿<!-- ErrorPopup.razor -->
+
+@if (!string.IsNullOrEmpty(CustomMessage))
+{
+    <div class="error-popup flex flex-column @(type=="error" ? "bg-danger" :"bg-success")">
+        <div class="w-full flex justify-content-between align-content-center">
+            <p class=" text-xl">@(type=="error" ? "Error" : "Success" )</p>
+            <div @onclick="ClosePopup" class=" cursor-pointer hover-effect">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                </svg>
+            </div>
+        </div>
+         <p>@CustomMessage</p>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string CustomMessage { get; set; }
+
+    [Parameter]
+    public Action OnClose { get; set; }
+
+    [Parameter]
+    public string type { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Automatically close the popup after 5 seconds
+        Task.Delay(3000).ContinueWith(_ =>
+        {
+            OnClose?.Invoke();
+            CustomMessage = string.Empty;
+            type = string.Empty;
+            InvokeAsync(StateHasChanged);
+        });
+
+        base.OnInitialized();
+    }
+    private void ClosePopup()
+    {
+        OnClose?.Invoke();
+    }
+}
+
+

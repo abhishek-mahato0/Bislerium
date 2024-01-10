@@ -1,0 +1,401 @@
+﻿@page "/addins";
+@using CoffeeBucks.models
+@using CoffeeBucks.Controllers
+@using System.Text.Json
+@inherits LayoutComponentBase
+
+<h3>Available Addins</h3>
+
+<div class=" flexbetween">
+    <div class="search-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+        </svg>
+        <input type="text" id="searchInput" class="search-bar" placeholder="Search by name.." @oninput="searchAddins">
+    </div>
+    @if (_globalState.CurrentUser.role == "admin")
+    {
+        <button type="button" class="flex-row align-items-center justify-content-end px-3 py-1 btn btn-primary hover-effect" @onclick="showAddModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+            </svg>Add Addins
+        </button>
+    }
+</div>
+@if (!string.IsNullOrEmpty(error))
+{
+    <CoffeeBucks.Components.Layout.Components.Message CustomMessage="@error" OnClose="OnMessageClose" type="error" />
+}
+
+@if (!string.IsNullOrEmpty(success))
+{
+    <CoffeeBucks.Components.Layout.Components.Message CustomMessage="@success" OnClose="OnMessageClose" type="success" />
+}
+
+
+@* list of all the addins *@
+  <table class="table mt-3">
+    <thead class="bg-custom text-white">
+            <tr>
+                <th>S.N.</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Created By</th>
+            @if (_globalState.CurrentUser.role == "admin")
+            {
+                <th>Actions</th>
+            }
+        </tr>
+        </thead>
+        <tbody>
+        @if (addinList != null)
+        {
+            @foreach (var item in addinList)
+            {
+                <tr>
+                    <td>@(addinList.IndexOf(item) + 1)</td>
+                    <td>@item.Name</td>
+                    <td>@item.Price</td>
+                    <td>@(new UserController().getUserById(item.createdby)) </td>
+                    @if (_globalState.CurrentUser!.role == "admin")
+                    {
+                        <td class=" flex gap-4">
+                            <div @onclick="() => showEditModal(item)" class=" cursor-pointer hover-effect">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="blue" class="bi bi-pencil" viewBox="0 0 16 16">
+                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                            </svg>
+                        </div>
+                        <div @onclick="() => showDeleteModal(item)" class=" cursor-pointer hover-effect">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="red" class="bi bi-trash3" viewBox="0 0 16 16">
+                                <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
+                            </svg>
+                        </div>
+                    </td>
+                    }
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4">No items to show</td>
+
+            </tr>
+        }
+        </tbody>
+    </table>
+
+@if (ShowAddModal)
+{
+    <div class="modal">
+        <div class=" modal-container">
+            <div class="modal-header w-full">
+                <h2>Add Coffee</h2>
+                <div @onclick="hideAddModal" class=" cursor-pointer hover-effect">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                    </svg>
+                </div>
+
+            </div>
+            <div class="modal-body w-full">
+                <div class="mb-3 w-full">
+                    <label for="name" class="form-label">Addin Name</label>
+                    <input type="text" id="name" class="form-control" @bind="newName" placeholder="Expresso Cold">
+                </div>
+                <div class="mb-3 w-full">
+                    <label for="price" class="form-label">Price</label>
+                    <input type="number" class="form-control" id="price" @bind="newPrice" placeholder=" Rs. 500.." />
+                </div>
+            </div>
+
+            <div class="w-full modal-footer">
+                <p class="text-danger text-xl-center hover-effect cursor-pointer" @onclick="hideAddModal">Cancel</p>
+                <button type="button" class="btn btn-primary hover-effect" @onclick="Addaddin">Add</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowEditModal)
+{
+    <div class="modal">
+        <div class=" modal-container">
+            <div class="modal-header w-full">
+                <h2>Edit Addin</h2>
+                <div @onclick="hideEditModal" class=" cursor-pointer hover-effect">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                    </svg>
+                </div>
+
+            </div>
+            <div class="modal-body w-full">
+                <div class="mb-3 w-full">
+                    <label for="name" class="form-label">Coffee Name</label>
+                    <input type="text" id="name" class="form-control" @bind="editedAddin.Name">
+                </div>
+                <div class="mb-3 w-full">
+                    <label for="price" class="form-label">Price</label>
+                    <input type="number" class="form-control" id="price" @bind="editedAddin.Price" />
+                </div>
+            </div>
+
+            <div class="w-full modal-footer">
+                <p class="text-danger text-xl-center cursor-pointer hover-effect" @onclick="hideEditModal">Cancel</p>
+                <button type="button" class="btn btn-primary hover-effect" @onclick="SaveEditedAddin">Save</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowDeleteModal)
+{
+    <div class="modal">
+        <div class=" modal-container">
+            <div class="modal-header w-full">
+                <h2>Delete Coffee</h2>
+                <div @onclick="hideDeleteModal" class=" cursor-pointer hover-effect">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="modal-body w-full">
+                <p class=" text-black-50"> Are you sure you want to delete ?</p>
+            </div>
+
+            <div class="modal-footer w-full">
+                <p class="text-black text-xl-center cursor-pointer hover-effect" @onclick="hideDeleteModal">Cancel</p>
+                <button type="button" class="btn btn-danger hover-effect" @onclick="DeleteAddin">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showVerifyPassword)
+{
+    <div class="modal">
+        <div class=" modal-container">
+            <div class="modal-header w-full">
+                <h2>Verify your password</h2>
+                <div @onclick="hideverifyModal" class=" cursor-pointer hover-effect">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="modal-body w-full">
+               <input type="password" placeholder="password" @bind="password" class=" form-control w-full p-2" />
+            </div>
+            <div class="modal-footer w-full">
+                <p class="text-black text-xl-center cursor-pointer hover-effect" @onclick="hideverifyModal">Cancel</p>
+                <button type="button" class="btn btn-danger hover-effect" @onclick="verifyPassword">Verify</button>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+
+    AddInsController addinController = new AddInsController();
+    private List<AddInsModel> addinList = null;
+    private string newName;
+    private decimal newPrice;
+    private string error = "";
+    private string success = "";
+    private bool loading = false;
+    private bool ShowEditModal = false;
+    private bool ShowAddModal = false;
+    private bool ShowDeleteModal = false;
+    private AddInsModel editedAddin = null;
+
+    private bool showVerifyPassword { get; set; } = false;
+    private string password { get; set; }
+    private string action { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            addinList = await addinController.readAddinsList();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+
+        }
+    }
+    private void showAddModal()
+    {
+        showVerifyPassword = true;
+        action = "add";
+    }
+    private void hideAddModal()
+    {
+        ShowAddModal = false;
+    }
+    // this method adds new addin 
+    private async Task Addaddin()
+    {
+        try
+        {
+            AddInsModel newAddin = new AddInsModel
+                {
+
+                    Name = newName,
+                    Price = newPrice,
+                    createdby = _globalState.CurrentUser.Id
+                };
+
+            CustomMessage message = await addinController.addAddins(newAddin);
+            if (message.success)
+            {
+                addinList = await addinController.readAddinsList();
+                ShowAddModal = false;
+                success = message.message;
+            }
+            else
+            {
+                error = message.message;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    private void showEditModal(AddInsModel addin)
+    {
+        showVerifyPassword = true;
+        action = "edit";
+        editedAddin = new AddInsModel { Id = addin.Id, Name = addin.Name, Price = addin.Price };
+    }
+    private void hideEditModal()
+    {
+        ShowEditModal = false;
+    }
+    //this method saves the edited coffee
+    private async Task SaveEditedAddin()
+    {
+        try
+        {
+
+            CustomMessage message = await addinController.editAddins(editedAddin);
+            if (message.success)
+            {
+                addinList = await addinController.readAddinsList();
+                ShowEditModal = false;
+                success = message.message;
+                editedAddin = new AddInsModel();
+            }
+            else
+            {
+                error = message.message;
+                ShowEditModal = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    private void OnMessageClose()
+    {
+        success = string.Empty;
+        error = string.Empty;
+    }
+
+    private void showDeleteModal(AddInsModel addin)
+    {
+        showVerifyPassword = true;
+        action = "delete";
+        editedAddin = new AddInsModel { Id = addin.Id, Name = addin.Name, Price = addin.Price };
+    }
+    private void hideDeleteModal()
+    {
+        ShowDeleteModal = false;
+    }
+    private void hideverifyModal()
+    {
+        showVerifyPassword = false;
+    }
+
+    //this method deletes the addin
+    private async Task DeleteAddin()
+    {
+        try
+        {
+            CustomMessage message = await addinController.deleteAddin(editedAddin.Id);
+            if (message.success)
+            {
+                addinList = await addinController.readAddinsList();
+                success = message.message;
+                error = string.Empty;
+                ShowDeleteModal = false;
+            }
+            else
+            {
+                ShowDeleteModal = false;
+                error = message.message;
+                success = string.Empty;
+
+
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    //this method gets called while searching for addins
+    private async Task searchAddins(ChangeEventArgs eventArgs)
+    {
+        if (eventArgs.Value != null)
+        {
+            // customerSearch = eventArgs.Value.ToString();
+            addinList =await addinController.getAddin(eventArgs.Value.ToString());
+        }
+    }
+    private async Task verifyPassword()
+    {
+        try
+        {
+            if (await new UserController().verifyPassword(_globalState.CurrentUser.Id, password))
+            {
+                showVerifyPassword = false;
+                password = "";
+                if (action == "add")
+                {
+
+                    ShowAddModal = true;
+                }
+                else if (action == "edit")
+                {
+                    ShowEditModal = true;
+                }
+                else
+                {
+                    ShowDeleteModal = true;
+                }
+            }
+            else
+            {
+                error = "Password does not match";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+
+    }
+}
+
